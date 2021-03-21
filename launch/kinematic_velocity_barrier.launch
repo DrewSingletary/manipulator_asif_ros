@@ -1,0 +1,61 @@
+<launch>
+
+  <!-- <include file="$(find manipulator_asif)/launch/rviz.launch"/> -->
+  <arg name="r_0" value="1.5" />
+
+  <node pkg="joy" type="joy_node" name="joy_node">
+    <param name="dev" value="/dev/input/js0" />
+    <param name="autorepeat_rate" value="50.0" />
+  </node>
+
+  <node ns="randy" pkg="manipulator_asif" type="human" name="human">
+    <param name="_x0" value="1.5" />
+    <param name="_y0" value="1.5" />
+    <param name="_r_0" value="$(arg r_0)" />
+    <param name="_theta0" value="89.5" />
+
+    <param name="_linear_maxvel" value="1" />
+    <param name="_angular_maxvel" value="1" />
+  </node>
+
+  <group ns="irb6640">
+    <node pkg="manipulator_asif" type="integrator" name="integrator" output="screen">
+      <param name="_timeScale" value="1" />
+      <param name="_ASIF_active" value="1" type="bool"/>
+    </node>
+
+    <node pkg="manipulator_asif" type="task_giver" name="task_giver">
+    </node>
+
+    <node pkg="manipulator_asif" type="controller" name="controller" output="screen">
+      <param name="_timeScale" value="1" />
+      <param name="_kp" value="1" />
+      <param name="_kd" value="10" />
+      <param name="_u0" value="-914" />
+      <param name="_u1" value="-4000" />
+      <param name="_Kd_0" value="1000" />
+      <param name="_Kd_1" value="1000" />
+      <param name="_Kd_2" value="100" />
+      <param name="_Kd_3" value="10" />
+      <param name="_Kd_4" value="10" />
+      <param name="_Kd_5" value="10" />
+      <param name="_max_acc" value="4" />      
+    </node>
+
+    <node pkg="manipulator_asif" type="kinematic_velocity_barrier" name="kinematic_barrier" output="screen">
+      <param name="_Kd_0" value="1000" />
+      <param name="_Kd_1" value="1000" />
+      <param name="_Kd_2" value="100" />
+      <param name="_Kd_3" value="10" />
+      <param name="_Kd_4" value="10" />
+      <param name="_Kd_5" value="10" />
+      <param name="_alpha" value="1" />
+      <param name="_alpha_e" value="1500" />
+      <param name="_energy_based" value="1" type="bool"/>
+      <param name="_r_0" value="$(arg r_0)" />
+    </node>
+  </group>
+
+  <node name="record" pkg="rosbag" type="record" args="-a -O /home/drew/test_energy.bag"/>
+
+</launch>    
