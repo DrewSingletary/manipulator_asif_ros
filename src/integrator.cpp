@@ -10,7 +10,6 @@
 #include "ros/ros.h"
 #include "std_msgs/Float32MultiArray.h"
 #include <boost/numeric/odeint.hpp>
-#include <boost/numeric/odeint/external/eigen/eigen.hpp>
 #include <stdlib.h>
 #include <sensor_msgs/JointState.h>
 
@@ -32,7 +31,7 @@ public:
   Integrator() {
     q = pinocchio::neutral(*model);
     v = Eigen::VectorXd::Zero(model->nv);
-    x = Eigen::VectorXd::Zero(2*model->nv);
+    x.resize(2*model->nv,0);
     for (int i = 0; i < DOF; ++i)
     {
       x[i] = q[i];
@@ -47,7 +46,7 @@ public:
     } 
   }
 
-  void rhs(const state_type &x, state_type &dxdt) {
+  void rhs(const std::vector<double> &x, std::vector<double> &dxdt) {
     for (int i = 0; i < DOF; i++) {
       dxdt[i] = x[DOF+i];
     }
@@ -65,8 +64,8 @@ public:
     boost::numeric::odeint::integrate(boost::bind(&Integrator::rhs, this, _1, _2), 
                                       x, t, t+dt, 0.001);
     t += dt;
-    q = x.head(DOF);
-    v = x.tail(DOF);
+    q = Eigen::Map<Eigen::VectorXd>(x.data(),DOF);
+    v = Eigen::Map<Eigen::VectorXd>(x.data()+DOF,DOF);
   }
 
   void sendTransformCurrent(void)
@@ -93,7 +92,7 @@ public:
     odom_broadcaster.sendTransform(odom_trans);
   }
 
-  state_type x;
+  std::vector<double> x;
   state_type tau;
   state_type acc;
   state_type q;
