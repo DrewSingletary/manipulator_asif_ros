@@ -19,12 +19,12 @@
 #include "pinocchio/algorithm/aba.hpp"
 #include "pinocchio/algorithm/aba-derivatives.hpp"
 #include "pinocchio/algorithm/crba.hpp"
-
 #include "math.h"
 #include "ros/ros.h"
 #include "sensor_msgs/Joy.h"
 #include "geometry_msgs/Pose2D.h"
 #include "std_msgs/Float32MultiArray.h"
+#include "visualization_msgs/Marker.h"
 
 #include <iostream>
 #include <fstream>
@@ -33,38 +33,31 @@
 #include "asif_timing.h"
 #include <Eigen/QR> 
 
+#include <chrono>
+using namespace std::chrono;
+
 using namespace Eigen;
 
 ASIF::ASIF *asif;
-
-pinocchio::Model *model;
-pinocchio::Data *data;
-
 double alpha = 1;
-
 bool energy_based = false;
 double alpha_e = 0;
 double h_only = 0;
-
-double kd = 20;
-
 const int startJoint = 5;
 const uint32_t DOF= 6;
 const uint32_t nx = 6;
 const uint32_t nu = 6;
 const uint32_t npSS = DOF-startJoint;
-
 const double lb[nu] = {-2,-2,-2,-2,-2,-2};
 const double ub[nu] = {2,2,2,2,2,2};
-
-double r_0 = 1.0;
-
 ASIF_timing::ASIFtimer timer;
+
+pinocchio::Model *model;
+pinocchio::Data *data;
 
 typedef VectorXd state_type;
 
 state_type vdes = Eigen::VectorXd::Zero(DOF);
-
 state_type rob_pos = Eigen::VectorXd::Zero(6);
 state_type rob_vel = Eigen::VectorXd::Zero(6);
 state_type human_pos = Eigen::VectorXd::Zero(3);
@@ -82,17 +75,21 @@ double Kd_2 = 10;
 double Kd_3 = 10;
 double Kd_4 = 10;
 double Kd_5 = 10;
+double r_0 = 1.0;
 
+// Updates robot joint positions
 void rob_pos_cb(const std_msgs::Float32MultiArray::ConstPtr& msg) {
   for (int i = 0; i < DOF; ++i)
     rob_pos[i] = msg->data[i];
 }
 
+// Updates robot joint velocites
 void rob_vel_cb(const std_msgs::Float32MultiArray::ConstPtr& msg) {
   for (int i = 0; i < DOF; ++i)
     rob_vel[i] = msg->data[i];
 }
 
+// Updates the human position to be used by CBF
 void human_pos_cb(const geometry_msgs::Pose2D::ConstPtr& msg) {
     human_pos[0] = msg->x;
     human_pos[1] = msg->y;
@@ -143,7 +140,8 @@ void safetySet_(const double *x, double *h, double *Dh,
     DKDx.setZero();
 
     hEigen[i-startJoint] = (E[0]-human_pos[0])*(E[0]-human_pos[0])+(E[1]-human_pos[1])*(E[1]-human_pos[1])+
-                (E[2]-r_0)*(E[2]-r_0)-r_0*r_0;
+                (E[2]-r_0)*(E[2]-r_0)-(r_0*r_0+.25);
+    // ROS_INFO("vals: %f, %f",hEigen[i-startJoint],h_tmp);
 
     Matrix<double,1,3> dhde;
     dhde[0] = 2*(E[0]-human_pos[0]);
@@ -233,11 +231,24 @@ void v_cb(const std_msgs::Float32MultiArray::ConstPtr& msg) {
   Matrix<double,DOF,nu> g; g.setZero();
   dynamics_(rob_pos.data(),f.data(),g.data());
   Lfh = dh*f;
+  Matrix<double,1,nu> BKqdot;
+  BKqdot(0) = Kd_0*(rob_vel[0]-vdes(0));
+  BKqdot(1) = Kd_1*(rob_vel[1]-vdes(1));
+  BKqdot(2) = Kd_2*(rob_vel[2]-vdes(2));
+  BKqdot(3) = Kd_3*(rob_vel[3]-vdes(3));
+  BKqdot(4) = Kd_4*(rob_vel[4]-vdes(4));
+  BKqdot(5) = Kd_5*(rob_vel[5]-vdes(5));
   Lgh = dh*g;
+  if (energy_based)
+    Lgh += BKqdot;
   Eigen::MatrixXd Dhinv =  dh.transpose()*(dh*dh.transpose()).inverse();
   Eigen::Matrix<double,DOF,1> vhard;
   vhard = vdes + -Dhinv*(dh*vdes+alpha*h);
+  auto start = high_resolution_clock::now();
   int32_t rc = asif->filter(xNow,vdes.data(),vActNow.data(),Lfh.data(),Lgh.data());
+  auto stop = high_resolution_clock::now();
+  auto duration = duration_cast<microseconds>(stop - start);
+  std::cout << "timing (us): " << duration.count() << std::endl;
   ASIF_timing::toc(&timer);
 
   if (rc != 1)
@@ -280,8 +291,6 @@ void v_cb(const std_msgs::Float32MultiArray::ConstPtr& msg) {
   asif_pub.publish(u_msg);
   h_pub.publish(h_msg);
 }
-
-
 
 int main(int argc, char **argv) {
 

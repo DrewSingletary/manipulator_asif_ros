@@ -43,6 +43,12 @@ int main(int argc, char **argv) {
   qdes(1,3) += M_PI/8;
   qdes(1,0) += 3*M_PI/8;
   qdes(1,2) += 3*M_PI/8;
+  // qdes(0,1) += M_PI/6;
+  // qdes(0,2) += 2*M_PI/6;
+  // qdes(0,3) += 3*M_PI/6;
+  // qdes(1,0) += 3*M_PI/8;
+  // qdes(1,1) += 2*M_PI/8;
+  // qdes(1,2) += 1*M_PI/8;
   for (int i = 0; i < total_tasks; i++) {
     Eigen::VectorXd qdesi = qdes.col(i);
     pinocchio::computeJointJacobians(model, data, qdesi);

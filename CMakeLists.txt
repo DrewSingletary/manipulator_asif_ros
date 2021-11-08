@@ -7,6 +7,7 @@ set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
 find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs genmsg tf)
 find_package(asif++ CONFIG REQUIRED)
 find_package(pinocchio REQUIRED)
+# find_package(CGAL REQUIRED)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(pinocchio REQUIRED pinocchio)
@@ -22,6 +23,9 @@ link_directories(boost_system ${pinocchio_LIBRARY_DIRS})
 
 add_executable(human src/human.cpp)
 target_link_libraries(human ${catkin_LIBRARIES})
+
+# add_executable(signed_distance_test src/signed_distance_test.cpp)
+# target_link_libraries(signed_distance_test ${catkin_LIBRARIES} CGAL gmp)
 
 add_executable(controller src/controller.cpp)
 target_link_libraries(controller ${catkin_LIBRARIES} boost_system urdfdom_model ${pinocchio_LIBRARIES})
@@ -42,3 +46,7 @@ target_compile_options(implicit_asif PUBLIC ${pinocchio_CFLAGS_OTHER})
 add_executable(kinematic_velocity_barrier src/kinematic_velocity_barrier.cpp)
 target_link_libraries(kinematic_velocity_barrier ${catkin_LIBRARIES} boost_system urdfdom_model asif++::asif++ ${pinocchio_LIBRARIES})
 target_compile_options(kinematic_velocity_barrier PUBLIC ${pinocchio_CFLAGS_OTHER})
+
+# add_executable(cgal_barriers src/cgal_barriers.cpp)
+# target_link_libraries(cgal_barriers ${catkin_LIBRARIES} boost_system urdfdom_model asif++::asif++ ${pinocchio_LIBRARIES}  CGAL gmp)
+# target_compile_options(cgal_barriers PUBLIC ${pinocchio_CFLAGS_OTHER})

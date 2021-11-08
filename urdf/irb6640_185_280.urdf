@@ -128,7 +128,9 @@
     </collision>
     <visual name="visual">
       <geometry>
-        <mesh filename="package://abb_irb6640_support/meshes/irb6640_185_280/visual/link_6.dae"/>
+        <!-- <mesh filename="package://abb_irb6640_support/meshes/irb6640_185_280/visual/link_6.dae"/> -->
+        <!-- <box size=".5 .5 .5" /> -->
+        <sphere radius="0.5"/>
       </geometry>
       <material name="yellow"/>
     </visual>

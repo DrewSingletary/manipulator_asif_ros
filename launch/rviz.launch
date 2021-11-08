@@ -3,7 +3,7 @@
 
 	<node name="rviz" pkg="rviz" type="rviz" required="true" />
 	
-	<arg name="arm_model" default="$(find abb_irb6640_support)/urdf/irb6640_185_280.urdf"/>
+	<arg name="arm_model" default="$(find manipulator_asif)/urdf/irb6640_185_280.urdf"/>
 	<param name="arm_description" command="$(find xacro)/xacro --inorder $(arg arm_model)" />
 
 	<node pkg="robot_state_publisher" type="robot_state_publisher" name="arm_rviz_state" >

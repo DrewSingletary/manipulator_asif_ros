@@ -1,7 +1,7 @@
 <launch>
 
   <!-- <include file="$(find manipulator_asif)/launch/rviz.launch"/> -->
-  <arg name="r_0" value="1.5" />
+  <arg name="r_0" value="0.75" />
 
   <node pkg="joy" type="joy_node" name="joy_node">
     <param name="dev" value="/dev/input/js0" />
@@ -51,7 +51,7 @@
       <param name="_Kd_5" value="10" />
       <param name="_alpha" value="1" />
       <param name="_alpha_e" value="1500" />
-      <param name="_energy_based" value="1" type="bool"/>
+      <param name="_energy_based" value="0" type="bool"/>
       <param name="_r_0" value="$(arg r_0)" />
     </node>
   </group>
